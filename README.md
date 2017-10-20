@@ -5,6 +5,8 @@ A script to compact [asciinema](https://asciinema.org) JSON files.
 
 Sets a max wait time (like `asciinema -w 1.2` does, granted), and compacts backspaces (blunders are "compacted" out).
 
+Unfortunately, cannot compact blunders made inside of Vi\[m\].
+
 ```
 $ kinocompact -h
 Usage: kinocompact [options] [filename or -]
