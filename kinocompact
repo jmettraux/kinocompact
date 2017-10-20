@@ -26,35 +26,92 @@
 #
 
 require 'json'
+require 'optparse'
 
-TYPE_SPEED = 0.077
-WAIT_SPEED = 1.000
+
+#
+# opts wrangling
+
+opts = { ts: 0.077, ws: 1.0, bc: true, si: false, out: $stdout }
+  #
+OptionParser.new do |op|
+
+  op.banner = "Usage: kinocompact [options] [filename or -]"
+
+  op.on(
+    '-t SECONDS', '--type-speed SECONDS', Float,
+    "Sets the type speed, defaults to #{opts[:ts]}"
+  ) { |s| opts[:ts] = s.to_f }
+  op.on(
+    '-w SECONDS', '--wait-speed SECONDS', Float,
+    "Sets the max wait speed, defaults to #{opts[:ws]}"
+  ) { |s| opts[:ts] = s.to_f }
+
+  op.on(
+    '--stdin',
+    "Reads incoming asciinema json file on stdin",
+  ) { |s| opts[:si] = true }
+
+  op.on(
+    '-o FILENAME', '--out-file FILENAME',
+    "Sets the output file, defaults to STDOUT"
+  ) do |o|
+    opts[:out] =
+      case o
+      when 'stdout' then $stdout
+      when 'stderr' then $stderr
+      else File.open(o, 'wb')
+      end
+  end
+
+  op.on(
+    '-B', '--no-backspace-compaction',
+    "Disable backspace compaction",
+  ) { |s| opts[:bc] = false }
+
+  op.on('-h', '--help', "Print this help") { puts op; exit 0 }
+end.parse!
 
 j = JSON.parse(
-  if ARGV.empty? || ARGV == [ '-' ]
+  if ARGV.empty? || ARGV == [ '-' ] || opts[:si] == true
     STDIN.read
   else
     File.read(ARGV.first)
   end)
 
+
+#
+# retime asciinema stdout array
+
 so = j
   .delete('stdout')
 so = so
   .collect { |t, s|
-    s.length == 1 ? [ TYPE_SPEED, s ] : [ [ t, WAIT_SPEED ].min, s ] }
+    s.length == 1 ? [ opts[:ts], s ] : [ [ t, opts[:ws] ].min, s ] }
+
+#
+# backspace compaction
 
 loop do
   i = so.index { |t, s| s == "\b\u001b[K" }
   break unless i
   so.delete_at(i)
   so.delete_at(i - 1)
-end
+end if opts[:bc]
 
-puts '{'
-j.each { |k, v| puts "  #{k.inspect}: #{JSON.dump(v)}," }
-puts '  "stdout": ['
-so[0..-2].each { |o| puts "    #{JSON.dump(o)}," }
-puts "    #{JSON.dump(so.last)}"
-puts "  ]"
-puts '}'
+#
+# output resulting JSON
+
+opts[:out].puts '{'
+j.each { |k, v| opts[:out].puts "  #{k.inspect}: #{JSON.dump(v)}," }
+opts[:out].puts '  "stdout": ['
+so[0..-2].each { |o| opts[:out].puts "    #{JSON.dump(o)}," }
+opts[:out].puts "    #{JSON.dump(so.last)}"
+opts[:out].puts "  ]"
+opts[:out].puts '}'
+
+#
+# close output file if necessary
+
+opts[:out].close unless [ $stdin, $stdout ].include?(opts[:out])
 
