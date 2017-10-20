@@ -1,6 +1,12 @@
 
 # kinocompact
 
+> "There's a lighthouse in the middle of Prussia
+> A white house in a red square
+> I'm living in films for the sake of Russia
+> A Kino Runner for the DDR"
+>   Sisters of Mercy - Dominion / Mother Russia
+
 A script to compact [asciinema](https://asciinema.org) JSON files.
 
 Sets a max wait time (like `asciinema -w 1.2` does, granted), and compacts backspaces (blunders are "compacted" out).
