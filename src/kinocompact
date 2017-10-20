@@ -40,7 +40,7 @@ OptionParser.new do |op|
 
   op.on(
     '-t SECONDS', '--type-speed SECONDS', Float,
-    "Sets the type speed, defaults to #{opts[:ts]}"
+    "Sets the max type speed, defaults to #{opts[:ts]}"
   ) { |s| opts[:ts] = s.to_f }
   op.on(
     '-w SECONDS', '--wait-speed SECONDS', Float,
@@ -85,9 +85,7 @@ j = JSON.parse(
 
 so = j
   .delete('stdout')
-so = so
-  .collect { |t, s|
-    s.length == 1 ? [ opts[:ts], s ] : [ [ t, opts[:ws] ].min, s ] }
+  .collect { |t, s| [ [ t, opts[s.length == 1 ? :ts : :ws] ].min, s ] }
 
 #
 # backspace compaction
