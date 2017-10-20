@@ -100,6 +100,11 @@ loop do
 end if opts[:bc]
 
 #
+# recompute duration
+
+j['duration'] = so.inject(0.0) { |d, e| d + e.first }
+
+#
 # output resulting JSON
 
 opts[:out].puts '{'
